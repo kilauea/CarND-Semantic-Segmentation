@@ -56,70 +56,70 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     input = tf.layers.conv2d(
-                             inputs=vgg_layer7_out,
-                             filters=num_classes,
-                             kernel_size=1,
-                             strides=(1,1),
-                             padding="same",
-                             kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                             kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                             name = "inception")
-        
-                             
+        inputs=vgg_layer7_out, 
+        filters=num_classes,
+        kernel_size=1, 
+        strides=(1,1),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "inception")
+    
+
     # beginning of the decoder: de-convolutional layer
     input = tf.layers.conv2d_transpose(
-                                    inputs=input,
-                                    filters=num_classes,
-                                    kernel_size=4,
-                                    strides=(2,2),
-                                    padding="same",
-                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                                    name = "decoder_layer1")
+        inputs=input, 
+        filters=num_classes,
+        kernel_size=4, 
+        strides=(2,2),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "decoder_layer1")
 
     pool4_upscale = tf.layers.conv2d(
-                                  inputs=vgg_layer4_out,
-                                  filters=num_classes,
-                                  kernel_size=1,
-                                  strides=(1,1),
-                                  padding="same",
-                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                                  name = "score_pool4")
+        inputs=vgg_layer4_out, 
+        filters=num_classes,
+        kernel_size=1, 
+        strides=(1,1),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "score_pool4")
 
     input = tf.add(input, pool4_upscale, name="skip_pool4")
 
     input = tf.layers.conv2d_transpose(
-                                    inputs=input,
-                                    filters=num_classes,
-                                    kernel_size=4,
-                                    strides=(2,2),
-                                    padding="same",
-                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                                    name = "decoder_layer2")
+        inputs=input, 
+        filters=num_classes,
+        kernel_size=4, 
+        strides=(2,2),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "decoder_layer2")
 
     pool3_upscale = tf.layers.conv2d(
-                                  inputs=vgg_layer3_out,
-                                  filters=num_classes,
-                                  kernel_size=1,
-                                  strides=(1,1),
-                                  padding="same",
-                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                                  name = "score_pool3")
+        inputs=vgg_layer3_out, 
+        filters=num_classes,
+        kernel_size=1, 
+        strides=(1,1),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "score_pool3")
 
     input = tf.add(input, pool3_upscale, name="skip_pool3")
 
     input = tf.layers.conv2d_transpose(
-                                    inputs=input,
-                                    filters=num_classes,
-                                    kernel_size=16,
-                                    strides=(8,8),
-                                    padding="same",
-                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
-                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
-                                    name = "decoder_layer3")
+        inputs=input, 
+        filters=num_classes,
+        kernel_size=16, 
+        strides=(8,8),
+        padding="same",
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+        name = "decoder_layer3")
 
     return input
 tests.test_layers(layers)
@@ -139,7 +139,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # logits and labels must have the same shape, e.g. [batch_size, num_classes] and the same dtype (either float16, float32, or float64).
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
     train_op = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cross_entropy_loss)
-    
+
     return (logits, train_op, cross_entropy_loss)
 tests.test_optimize(optimize)
 
@@ -199,6 +199,10 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
+        # Build NN using load_vgg, layers, and optimize function
+        correct_label = tf.placeholder(tf.float32, [None, image_shape[0], image_shape[1], num_classes])
+        learning_rate = 1e-4
+
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
         nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes=2)
         logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, 2)
@@ -206,17 +210,17 @@ def run():
         # TODO: Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
         train_nn(
-                 sess=sess,
-                 epochs=20,
-                 batch_size=8,
-                 get_batches_fn=get_batches_fn,
-                 train_op=train_op,
-                 cross_entropy_loss=cross_entropy_loss,
-                 input_image=image_input,
-                 correct_label=correct_label,
-                 keep_prob=keep_prob,
-                 learning_rate=learning_rate)
-
+            sess=sess, 
+            epochs=20, 
+            batch_size=8, 
+            get_batches_fn=get_batches_fn, 
+            train_op=train_op, 
+            cross_entropy_loss=cross_entropy_loss, 
+            input_image=image_input,
+            correct_label=correct_label, 
+            keep_prob=keep_prob, 
+            learning_rate=learning_rate)
+        
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, image_input)
