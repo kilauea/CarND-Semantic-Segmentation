@@ -55,7 +55,73 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    return None
+    input = tf.layers.conv2d(
+                             inputs=vgg_layer7_out,
+                             filters=num_classes,
+                             kernel_size=1,
+                             strides=(1,1),
+                             padding="same",
+                             kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                             kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                             name = "inception")
+        
+                             
+    # beginning of the decoder: de-convolutional layer
+    input = tf.layers.conv2d_transpose(
+                                    inputs=input,
+                                    filters=num_classes,
+                                    kernel_size=4,
+                                    strides=(2,2),
+                                    padding="same",
+                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                                    name = "decoder_layer1")
+
+    pool4_upscale = tf.layers.conv2d(
+                                  inputs=vgg_layer4_out,
+                                  filters=num_classes,
+                                  kernel_size=1,
+                                  strides=(1,1),
+                                  padding="same",
+                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                                  name = "score_pool4")
+
+    input = tf.add(input, pool4_upscale, name="skip_pool4")
+
+    input = tf.layers.conv2d_transpose(
+                                    inputs=input,
+                                    filters=num_classes,
+                                    kernel_size=4,
+                                    strides=(2,2),
+                                    padding="same",
+                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                                    name = "decoder_layer2")
+
+    pool3_upscale = tf.layers.conv2d(
+                                  inputs=vgg_layer3_out,
+                                  filters=num_classes,
+                                  kernel_size=1,
+                                  strides=(1,1),
+                                  padding="same",
+                                  kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                                  name = "score_pool3")
+
+    input = tf.add(input, pool3_upscale, name="skip_pool3")
+
+    input = tf.layers.conv2d_transpose(
+                                    inputs=input,
+                                    filters=num_classes,
+                                    kernel_size=16,
+                                    strides=(8,8),
+                                    padding="same",
+                                    kernel_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                                    kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3),
+                                    name = "decoder_layer3")
+
+    return input
 tests.test_layers(layers)
 
 
