@@ -66,7 +66,7 @@ def main():
                         default='http://www.cvlibs.net/download.php?file=data_road.zip',
                         type=str)
     parser.add_argument('--kitti_id',
-                        default='http://www.cvlibs.net/download.php?file=data_road.zip',
+                        default='1RfRei0BETK1A8J0ZjVMWIQYwMVbykvxS',
                         type=str)
     args = parser.parse_args()
     
