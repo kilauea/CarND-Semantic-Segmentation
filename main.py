@@ -186,7 +186,7 @@ def run():
                         default=20,
                         type=int)
     parser.add_argument('--batch_size',
-                        default=8',
+                        default=8,
                         type=int)
     args = parser.parse_args()
     
