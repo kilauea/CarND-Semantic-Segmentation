@@ -138,10 +138,6 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     # logits and labels must have the same shape, e.g. [batch_size, num_classes] and the same dtype (either float16, float32, or float64).
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
-    # get the total l2 regularization
-    l2_loss = tf.losses.get_regularization_loss()
-    # add the l2 regularization to the loss
-    cross_entropy_loss += l2_loss
     train_op = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cross_entropy_loss)
 
     return (logits, train_op, cross_entropy_loss)
@@ -215,7 +211,7 @@ def run():
         sess.run(tf.global_variables_initializer())
         train_nn(
             sess=sess, 
-            epochs=10,
+            epochs=20,
             batch_size=8, 
             get_batches_fn=get_batches_fn, 
             train_op=train_op, 
