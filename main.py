@@ -245,7 +245,7 @@ def run():
 
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
         nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization)
-        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, num_classes, l2_regularization)
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learningRate, num_classes, l2_regularization)
 
         # TODO: Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
@@ -259,7 +259,7 @@ def run():
             input_image=image_input,
             correct_label=correct_label, 
             keep_prob=keepProb,
-            learning_rate=learningRate)
+            learning_rate=learning_rate)
         
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
