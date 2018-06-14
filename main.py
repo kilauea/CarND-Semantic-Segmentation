@@ -46,7 +46,7 @@ def load_vgg(sess, vgg_path):
 tests.test_load_vgg(load_vgg, tf)
 
 
-def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
     :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
@@ -57,7 +57,6 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     # TODO: Implement function
     stddev = 0.01
-    l2_regularization = 1e-3
     input = tf.layers.conv2d(
         inputs=vgg_layer7_out, 
         filters=num_classes,
@@ -128,7 +127,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
 tests.test_layers(layers)
 
 
-def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
+def optimize(nn_last_layer, correct_label, learning_rate, num_classes, l2_const):
     """
     Build the TensorFLow loss and optimizer operations.
     :param nn_last_layer: TF Tensor of the last layer in the neural network
@@ -141,9 +140,11 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     # logits and labels must have the same shape, e.g. [batch_size, num_classes] and the same dtype (either float16, float32, or float64).
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
+    # calculate the total l2 regularization
+    l2_loss = cross_entropy_loss + l2_const * tf.losses.get_regularization_loss()
     train_op = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cross_entropy_loss)
 
-    return (logits, train_op, cross_entropy_loss)
+    return (logits, train_op, l2_loss)
 tests.test_optimize(optimize)
 
 
@@ -173,8 +174,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                        feed_dict={
                            input_image: image,
                            correct_label: label,
-                           keep_prob: 0.5,
-                           learning_rate : learning_rate
+                           keep_prob: keep_prob,
+                           learning_rate: learning_rate
                        })
         print("  Epoch {} - Loss = {:.3f}".format(epoch + 1, loss))
 tests.test_train_nn(train_nn)
@@ -182,6 +183,15 @@ tests.test_train_nn(train_nn)
 
 def run():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--learningRate',
+                        default=1e-4,
+                        type=float32)
+    parser.add_argument('--keepProb',
+                        default=0.5,
+                        type=float32)
+    parser.add_argument('--l2_regularization',
+                        default=1e-3,
+                        type=float32)
     parser.add_argument('--epochs',
                         default=20,
                         type=int)
@@ -192,7 +202,15 @@ def run():
     
     epochs = args.epochs
     batch_size = args.batch_size
-    
+    learningRate = args.learningRate
+    keepProb = args.keepProb
+    l2_regularization = args.l2_regularization
+    print('epochs:              ', epochs)
+    print('batch_size:          ', batch_size)
+    print('learningRate:        ', learningRate)
+    print('keep_prob:           ', keep_prob)
+    print('l2_regularization:   ', l2_regularization)
+
     num_classes = 2
     image_shape = (160, 576)
     data_dir = './data'
@@ -218,15 +236,12 @@ def run():
         # TODO: Build NN using load_vgg, layers, and optimize function
         # Build NN using load_vgg, layers, and optimize function
         correct_label = tf.placeholder(tf.float32, [None, image_shape[0], image_shape[1], num_classes])
-        learning_rate = 1e-4
+        learning_rate = tf.placeholder(dtype = tf.float32)
 
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
-        nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes=2)
-        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, 2)
+        nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization)
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, num_classes, l2_regularization)
 
-        print('epochs:    ', epochs)
-        print('batch_size:', batch_size)
-        print('keep_prob: ', keep_prob)
         # TODO: Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
         train_nn(
@@ -238,8 +253,8 @@ def run():
             cross_entropy_loss=cross_entropy_loss, 
             input_image=image_input,
             correct_label=correct_label, 
-            keep_prob=keep_prob, 
-            learning_rate=learning_rate)
+            keep_prob=keepProb,
+            learning_rate=learningRate)
         
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
