@@ -3,8 +3,8 @@ import tensorflow as tf
 import helper
 import warnings
 from distutils.version import LooseVersion
-import project_tests as tests
 import argparse
+import project_tests as tests
 
 
 # Check TensorFlow Version
@@ -43,10 +43,11 @@ def load_vgg(sess, vgg_path):
     layer7_out = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
     
     return (image_input, keep_prob, layer3_out, layer4_out, layer7_out)
+
 tests.test_load_vgg(load_vgg, tf)
 
 
-def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization):
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
     :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
@@ -64,7 +65,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(1,1),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "inception")
     
 
@@ -76,7 +77,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(2,2),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer1")
 
     pool4_upscale = tf.layers.conv2d(
@@ -86,7 +87,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(1,1),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "score_pool4")
 
     input = tf.add(input, pool4_upscale, name="skip_pool4")
@@ -98,7 +99,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(2,2),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer2")
 
     pool3_upscale = tf.layers.conv2d(
@@ -108,7 +109,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(1,1),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "score_pool3")
 
     input = tf.add(input, pool3_upscale, name="skip_pool3")
@@ -120,10 +121,11 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regul
         strides=(8,8),
         padding="same",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_regularization),
+        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer3")
 
     return input
+
 tests.test_layers(layers)
 
 
@@ -145,6 +147,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes, l2_const)
     train_op = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(cross_entropy_loss)
 
     return (logits, train_op, l2_loss)
+
 tests.test_optimize(optimize)
 
 
@@ -178,6 +181,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                            learning_rate: learning_rate
                        })
         print("  Epoch {} - Loss = {:.3f}".format(epoch + 1, loss))
+
 tests.test_train_nn(train_nn)
 
 
@@ -215,6 +219,7 @@ def run():
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
+
     tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
