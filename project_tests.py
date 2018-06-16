@@ -22,9 +22,9 @@ def test_safe(func):
 
 
 def _prevent_print(function, params):
-    sys.stdout = open(os.devnull, "w")
+    #sys.stdout = open(os.devnull, "w")
     function(**params)
-    sys.stdout = sys.__stdout__
+    #sys.stdout = sys.__stdout__
 
 
 def _assert_tensor_shape(tensor, shape, display_name):
@@ -136,7 +136,9 @@ def test_train_nn(train_nn):
             'input_image': input_image,
             'correct_label': correct_label,
             'keep_prob': keep_prob,
-            'learning_rate': learning_rate}
+            'learning_rate': learning_rate,
+            'keep_prob_value': 0.5,
+            'learning_rate_value': 0.001}
         _prevent_print(train_nn, parameters)
 
 

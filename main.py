@@ -63,7 +63,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=1, 
         strides=(1,1),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
         kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "inception")
@@ -75,9 +75,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=4, 
         strides=(2,2),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
+        #kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer1")
 
     pool4_upscale = tf.layers.conv2d(
@@ -85,7 +85,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=1, 
         strides=(1,1),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
         kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "score_pool4")
@@ -97,9 +97,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=4, 
         strides=(2,2),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
+        #kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer2")
 
     pool3_upscale = tf.layers.conv2d(
@@ -107,7 +107,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=1, 
         strides=(1,1),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
         kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "score_pool3")
@@ -119,9 +119,9 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_reg):
         filters=num_classes,
         kernel_size=16, 
         strides=(8,8),
-        padding="same",
+        padding="SAME",
         kernel_initializer=tf.truncated_normal_initializer(stddev=stddev),
-        kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
+        #kernel_regularizer=tf.contrib.layers.l2_regularizer(l2_reg),
         name = "decoder_layer3")
 
     return input
@@ -152,7 +152,7 @@ tests.test_optimize(optimize)
 
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
-             correct_label, keep_prob, learning_rate):
+             correct_label, keep_prob, learning_rate, keep_prob_value, learning_rate_value):
     """
     Train neural network and print out the loss during training.
     :param sess: TF Session
@@ -177,27 +177,29 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                        feed_dict={
                            input_image: image,
                            correct_label: label,
-                           keep_prob: keep_prob,
-                           learning_rate: learning_rate
+                           keep_prob: keep_prob_value,
+                           learning_rate: learning_rate_value
                        })
         print("  Epoch {} - Loss = {:.3f}".format(epoch + 1, loss))
 
 tests.test_train_nn(train_nn)
 
+def hparam_to_string(keep_prob_value, learning_rate_value, l2_regularization_value):
+    return "kp_%.0E,lr_%.0E,l2_%.0E" % (keep_prob_value, learning_rate_value, l2_regularization_value)
 
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--learningRate',
                         default=1e-4,
-                        type=float32)
+                        type=float)
     parser.add_argument('--keepProb',
                         default=0.5,
-                        type=float32)
+                        type=float)
     parser.add_argument('--l2_regularization',
                         default=1e-3,
-                        type=float32)
+                        type=float)
     parser.add_argument('--epochs',
-                        default=20,
+                        default=48,
                         type=int)
     parser.add_argument('--batch_size',
                         default=8,
@@ -206,14 +208,15 @@ def run():
     
     epochs = args.epochs
     batch_size = args.batch_size
-    learningRate = args.learningRate
-    keepProb = args.keepProb
-    l2_regularization = args.l2_regularization
+    learning_rate_value = args.learningRate
+    keep_prob_value = args.keepProb
+    l2_regularization_value = args.l2_regularization
     print('epochs:              ', epochs)
     print('batch_size:          ', batch_size)
-    print('learningRate:        ', learningRate)
-    print('keep_prob:           ', keep_prob)
-    print('l2_regularization:   ', l2_regularization)
+    print('learningRate:        ', keep_prob_value)
+    print('keep_prob:           ', keep_prob_value)
+    print('l2_regularization:   ', l2_regularization_value)
+    hparam_str = hparam_to_string(keep_prob_value, learning_rate_value, l2_regularization_value)
 
     num_classes = 2
     image_shape = (160, 576)
@@ -244,8 +247,8 @@ def run():
         learning_rate = tf.placeholder(dtype = tf.float32)
 
         image_input, keep_prob, vgg_layer3_out, vgg_layer4_out, vgg_layer7_out = load_vgg(sess, vgg_path)
-        nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization)
-        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learningRate, num_classes, l2_regularization)
+        nn_last_layer = layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, l2_regularization_value)
+        logits, train_op, cross_entropy_loss = optimize(nn_last_layer, correct_label, learning_rate, num_classes, l2_regularization_value)
 
         # TODO: Train NN using the train_nn function
         sess.run(tf.global_variables_initializer())
@@ -258,12 +261,14 @@ def run():
             cross_entropy_loss=cross_entropy_loss, 
             input_image=image_input,
             correct_label=correct_label, 
-            keep_prob=keepProb,
-            learning_rate=learning_rate)
-        
+            keep_prob=keep_prob,
+            learning_rate=learning_rate,
+            keep_prob_value=keep_prob_value,
+            learning_rate_value=learning_rate_value)
+
         # TODO: Save inference data using helper.save_inference_samples
         #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
-        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, image_input)
+        helper.save_inference_samples(hparam_str, runs_dir, data_dir, sess, image_shape, logits, keep_prob, image_input)
 
         # OPTIONAL: Apply the trained model to a video
 
