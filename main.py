@@ -213,7 +213,7 @@ def run():
     l2_regularization_value = args.l2_regularization
     print('epochs:              ', epochs)
     print('batch_size:          ', batch_size)
-    print('learningRate:        ', keep_prob_value)
+    print('learningRate:        ', learning_rate_value)
     print('keep_prob:           ', keep_prob_value)
     print('l2_regularization:   ', l2_regularization_value)
     hparam_str = hparam_to_string(keep_prob_value, learning_rate_value, l2_regularization_value)

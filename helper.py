@@ -127,7 +127,7 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
 
 def save_inference_samples(hparam_str, runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
     # Make folder for current run
-    output_dir = os.path.join(runs_dir, str(hparam_str + "_" + time.time()))
+    output_dir = os.path.join(runs_dir, hparam_str + "_" + str(time.time()))
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
